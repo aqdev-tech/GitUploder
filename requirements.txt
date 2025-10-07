@@ -1,0 +1,6 @@
+flask
+requests
+Flask-Session
+python-dotenv
+Flask-SocketIO
+pathspec
