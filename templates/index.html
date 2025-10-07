@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Auto-Uploader | Ghostscript</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-900 text-gray-100 font-sans">
+
+    <nav class="bg-gray-900/80 backdrop-blur-md border-b border-gray-700/50 fixed w-full z-10">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between h-16">
+                <a class="text-2xl font-bold text-white" href="/">
+                    GitHub Auto-Uploader
+                </a>
+                {% if logged_in %}
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center">
+                        <img src="{{ user.avatar_url }}" alt="Avatar" class="w-8 h-8 rounded-full mr-2 border-2 border-gray-600">
+                        <span class="font-medium">{{ user.login }}</span>
+                    </div>
+                    <a href="{{ url_for('logout') }}" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300">Logout</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-4 pt-24">
+        {% if not logged_in %}
+        <!-- Landing Page Section -->
+        <div id="landing-page" class="text-center py-16">
+            <h1 class="text-5xl md:text-6xl font-extrabold leading-tight mb-4">Deploy Code to GitHub, <span class="text-indigo-400">Instantly</span>.</h1>
+            <p class="text-lg md:text-xl text-gray-400 max-w-3xl mx-auto mb-8">Stop wrestling with command lines. Just zip your project, upload it here, and watch as a new GitHub repository is born.</p>
+            <a href="{{ url_for('login') }}" class="cool-button">Login with GitHub to Get Started</a>
+            
+            <div class="mt-20 grid md:grid-cols-3 gap-8 text-left">
+                <div class="bg-gray-800/50 p-6 rounded-lg">
+                    <h3 class="text-xl font-bold mb-2">Secure Authentication</h3>
+                    <p class="text-gray-400">Login safely with GitHub OAuth. Your credentials are never stored on our servers.</p>
+                </div>
+                <div class="bg-gray-800/50 p-6 rounded-lg">
+                    <h3 class="text-xl font-bold mb-2">Real-time Progress</h3>
+                    <p class="text-gray-400">Watch the magic happen. Our live console shows you every step of the upload process.</p>
+                </div>
+                <div class="bg-gray-800/50 p-6 rounded-lg">
+                    <h3 class="text-xl font-bold mb-2">Smart & Simple</h3>
+                    <p class="text-gray-400">We respect your `.gitignore` and provide simple options for branch names and commit messages.</p>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- Uploader Section -->
+        <div id="uploader-section" class="max-w-2xl mx-auto py-12">
+            <div id="upload-form-container">
+                <form id="upload-form" class="bg-gray-800/60 p-8 rounded-xl shadow-2xl">
+                    <div class="mb-6">
+                        <label for="repo-name" class="block text-sm font-medium text-gray-300 mb-2">Repository Name</label>
+                        <input type="text" id="repo-name" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition" required>
+                    </div>
+                    <div class="mb-6">
+                        <label for="zip-file" class="block text-sm font-medium text-gray-300 mb-2">Project .zip File</label>
+                        <input type="file" id="zip-file" accept=".zip" class="w-full text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-500 file:text-white hover:file:bg-indigo-600" required>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="branch" class="block text-sm font-medium text-gray-300 mb-2">Branch Name</label>
+                            <input type="text" id="branch" value="main" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+                        </div>
+                        <div>
+                            <label for="visibility" class="block text-sm font-medium text-gray-300 mb-2">Visibility</label>
+                            <select id="visibility" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+                                <option value="public">Public</option>
+                                <option value="private">Private</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-8">
+                        <label for="commit-message" class="block text-sm font-medium text-gray-300 mb-2">Commit Message</label>
+                        <input type="text" id="commit-message" value="Initial commit via Auto-Uploader" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+                    </div>
+                    <button type="submit" id="submit-btn" class="cool-button w-full">Upload to GitHub</button>
+                </form>
+            </div>
+
+            <div id="progress-container" class="mt-8 d-none">
+                <div class="bg-gray-800/60 p-8 rounded-xl shadow-2xl">
+                    <div class="flex justify-center items-center mb-4">
+                        <div class="loader"></div>
+                        <h3 class="text-xl font-bold text-center ml-4">Uploading Project...</h3>
+                    </div>
+                    <div class="w-full bg-gray-700 rounded-full h-4 mb-4">
+                        <div id="progress-bar" class="bg-indigo-500 h-4 rounded-full" style="width: 0%"></div>
+                    </div>
+                    <pre id="log-output" class="bg-gray-900 text-gray-400 text-sm rounded-lg p-4 h-64 overflow-y-auto"></pre>
+                </div>
+            </div>
+
+            <div id="result-container" class="mt-8 d-none">
+                <div class="bg-green-900/50 border-2 border-green-500 text-center p-8 rounded-xl">
+                    <h2 class="text-2xl font-bold mb-2">Success!</h2>
+                    <p id="result-message" class="text-gray-300 mb-4"></p>
+                    <a href="#" id="repo-url" target="_blank" class="cool-button">Go to Repository</a>
+                    <button id="start-over-btn" class="cool-button mt-4">Start Over</button>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </main>
+
+    <footer class="bg-gray-900 border-t border-gray-700/50 mt-16">
+        <div class="container mx-auto px-4 py-4 text-center text-gray-500">
+            &copy; {{ current_year }} Ghostscript. All Rights Reserved.
+        </div>
+    </footer>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
